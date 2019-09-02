@@ -1,0 +1,96 @@
+---
+title: "Data 607 Project 1"
+author: "Ajay Arora"
+date: "August 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Retrieve chess data
+```{r}
+chessdata <- read.csv(file="https://raw.githubusercontent.com/AjayArora35/Project-1/master/tournamentinfo.txt", header=TRUE)
+head(chessdata)
+```
+
+#1. Get rid of the first few lines of data, not needed
+Reference: https://www.statmethods.net/input/datatypes.html
+
+           https://www.r-tutor.com/r-introduction/matrix
+           
+           https://dzone.com/articles/learn-r-how-extract-rows
+           
+           https://www.r-statistics.com/tag/transpose/   
+           
+           https://stackoverflow.com/questions/20791877/convert-character-matrix-into-numeric-matrix   
+           
+           https://astrostatistics.psu.edu/su07/R/html/base/html/colSums.html  
+           
+           https://www.gastonsanchez.com/Handling_and_Processing_Strings_in_R.pdf
+
+#Observation of data: Every 4, 7, 10, 13, etc. is a line separator; the data is in between the separator
+```{r}
+#Get rid of the first few rows
+chessdata2 <- chessdata[-c(1:2),]
+#For debugging: #head(chessdata2)
+
+#Get the data rows from the first data and second data row; alternating sequences
+topdatarow <- chessdata2[seq(2, length(chessdata2), 3)]
+bottomdatarow <- chessdata2[seq(3, length(chessdata2), 3)]
+
+#For debugging: #head(firstdatarow)
+#For debugging: #head(seconddatarow)
+
+#Start to extract out individual pieces of data from the data rows using Regular Expression
+library(stringr)
+prerating <- unlist(str_extract_all(bottomdatarow, "(R:\\s*)(\\d+)"))
+prerating <- as.numeric(unlist(str_extract_all(prerating, "(\\d+)")))
+#For debugging: #prerating
+#For debugging: #is.atomic(prerating)
+
+state <- unlist(str_trim(str_extract(bottomdatarow, "\\w+")))
+#For debugging: #is.atomic(state)
+
+player <- unlist(str_trim(str_extract_all(topdatarow, "(\\w+\\s){2,3}")))
+#For debugging: #is.atomic(player)
+
+challenger <- unlist(str_extract_all(topdatarow, "\\|[0-9].*"))
+challenger <- str_replace_all(challenger, "\\s{1,2}\\|","00|")
+challenger <- (str_extract_all(challenger, "\\s\\d{1,2}"))
+#For debugging: #challenger
+#For debugging: #is.atomic(challenger)
+
+points <- unlist(as.numeric(str_trim(str_extract(topdatarow, "\\d+\\.\\d+"))))
+#For debugging: #is.atomic(points)
+
+#We need to substitute the challenger's prerating into a temp2 matrix so we can
+#perform an AVG on the data.
+
+temp2 <- matrix(unlist(challenger), byrow=TRUE, nrow=length(challenger)) 
+temp2 <- apply(temp2, 2, as.numeric)
+#For debugging: #is.atomic(temp2)
+
+#Substitute prerating values
+for (x in 1:nrow(temp2)){
+  for (y in 1:ncol(temp2)){
+    if (temp2[x,y] == 0){temp2[x,y] = NA}
+      temp2[x,y] <- prerating[temp2[x,y]]
+  }
+}
+
+#For debugging: #temp2
+#Get prerating averages
+averages <- c(rowMeans(temp2))
+output <- data.frame(player,state, points, prerating, averages)
+#For debugging: #output
+
+#Create proper header names
+colnames(output) <- c("Players", "State", "Total Points", "PreRating", "Challenger's Ratings")
+head(output)
+
+#Finally, write out csv file
+write.csv(output, "Chess_Summary.csv", row.names=FALSE)
+```
+
