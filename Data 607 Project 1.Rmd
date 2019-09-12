@@ -92,5 +92,35 @@ head(output)
 
 #Finally, write out csv file
 write.csv(output, "Chess_Summary.csv", row.names=FALSE)
+
+#Let's create some graphs to better visualize the data
+#Graph challenger's rating for all players
+library(ggplot2)
+ggplot(output,
+       aes(x=output$`Challenger's Ratings`,
+           y=output$Players
+           ))+
+  geom_point()
+
+#Graph all players prerating
+ggplot(output,
+       aes(x=output$PreRating,
+           y=output$Players
+           ))+
+  geom_point()
+
+#Graph all players location
+ggplot(output,
+       aes(x=output$State,
+           y=output$Players
+           ))+
+  geom_point()
+
+#Graph all players total points
+ggplot(output,
+       aes(x=output$`Total Points`,
+           y=output$Players
+           ))+
+  geom_point()
 ```
 
